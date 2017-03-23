@@ -1,11 +1,13 @@
 package com.example.bisho.interviewtask.classes;
 
+import com.orm.SugarRecord;
+
 /**
  * Created by bisho on 21-Mar-17.
  */
 // this is a class to hold photo information
 
-public class Photo {
+public class Photo extends SugarRecord{
 
     private String imageURL; // image url
     private String imageTitle; // image title

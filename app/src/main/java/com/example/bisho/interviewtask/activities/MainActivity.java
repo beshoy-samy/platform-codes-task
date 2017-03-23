@@ -59,19 +59,38 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         flickrAdapter = new FlickrImagesRecyclerAdapter(context,flickrImages);
 
         requestQueue = Volley.newRequestQueue(context);
-        requestInProgress = savedInstanceState.getBoolean("requestInProgress");
+        if(savedInstanceState != null)
+            requestInProgress = savedInstanceState.getBoolean("requestInProgress");
+        
+        if(networkAvailable()) {
+            if (!requestInProgress)
+                create_new_request();
+        }else{
+            showImagesInOfflineMode();
+        }
+    }
 
-        if(!requestInProgress)
-            create_new_request();
+    private void showImagesInOfflineMode() {
+
+        Toast.makeText(context,getResources().getString(R.string.no_internet_error_message),Toast.LENGTH_LONG).show();
+        //getting images from sugar database
+        flickrImages = (ArrayList<Photo>) Photo.listAll(Photo.class);
+
+        flickrAdapter.updateFlickrImages(flickrImages);
+        flickrImages_recyclerView.setAdapter(flickrAdapter);
     }
 
     @Override
     public void onRefresh() {
-        create_new_request();
-        Toast.makeText(context,"pull triggered",Toast.LENGTH_LONG).show();
+        if(networkAvailable())
+            create_new_request();
+        else {
+            Toast.makeText(context, getResources().getString(R.string.no_internet_error_message), Toast.LENGTH_LONG).show();
+            images_swipe_refresh.setRefreshing(false);
+        }
     }
 
-    public boolean isNetworkAvailable () {
+    public boolean networkAvailable () {
         ConnectivityManager networkManager =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -126,13 +145,17 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
         try {
             flickrImages.clear();   // clearing the images before getting the new images
+            Photo.deleteAll(Photo.class);// clearing the images before saving the new images
+
             JSONObject photos = flickJsonObject.getJSONObject(photos_JsonObject);
             JSONArray images = photos.getJSONArray(photos_JsonArray);
             for (int i=0;i<images.length();i++){
                 JSONObject photo = images.getJSONObject(i);
                 String photoURL = photo.getString(image_URL);
                 String photoTitle = photo.getString(image_title);
-                flickrImages.add(new Photo(photoURL,photoTitle));
+                Photo flickrPhoto = new Photo(photoURL,photoTitle);
+                flickrPhoto.save();
+                flickrImages.add(flickrPhoto);
             }
 
         } catch (JSONException e) {
