@@ -3,6 +3,7 @@ package com.example.bisho.interviewtask.activities;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -51,7 +52,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         context = this;
 
         images_swipe_refresh = (SwipeRefreshLayout) findViewById(R.id.images_swipe_refresh);
+        images_swipe_refresh.setColorSchemeColors(ContextCompat.getColor(context, R.color.colorPrimary)
+                ,ContextCompat.getColor(context, R.color.colorPrimaryDark)
+                ,ContextCompat.getColor(context, R.color.colorAccent));
         images_swipe_refresh.setOnRefreshListener(this);
+
 
         flickrImages_recyclerView = (RecyclerView) findViewById(R.id.images_recycler_view);
 

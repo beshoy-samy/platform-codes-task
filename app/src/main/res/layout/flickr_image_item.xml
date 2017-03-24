@@ -11,7 +11,8 @@
         android:id="@+id/image_title"
         android:layout_gravity="center_horizontal"
         android:gravity="center_horizontal"
-        android:layout_marginTop="@dimen/image_title_marginTop"/>
+        android:layout_marginTop="@dimen/image_title_marginTop"
+        android:textColor="@color/primary_text"/>
 
     <ImageView
         android:layout_width="match_parent"
