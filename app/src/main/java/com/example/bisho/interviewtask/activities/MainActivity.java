@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private ArrayList<Photo> flickrImages;
     private FlickrImagesRecyclerAdapter flickrAdapter;
     private boolean requestInProgress;
+    private boolean rotated;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,31 +54,39 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         images_swipe_refresh.setOnRefreshListener(this);
 
         flickrImages_recyclerView = (RecyclerView) findViewById(R.id.images_recycler_view);
-        flickrImages_recyclerView.setLayoutManager(new LinearLayoutManager(context,LinearLayoutManager.VERTICAL,false));
 
         flickrImages = new ArrayList<>();
         flickrAdapter = new FlickrImagesRecyclerAdapter(context,flickrImages);
 
         requestQueue = Volley.newRequestQueue(context);
-        if(savedInstanceState != null)
+        if(savedInstanceState != null) {
             requestInProgress = savedInstanceState.getBoolean("requestInProgress");
+            rotated           = savedInstanceState.getBoolean("rotated");
+        }
         
         if(networkAvailable()) {
-            if (!requestInProgress)
-                create_new_request();
+            if(rotated) {
+                if (!requestInProgress)
+                    showImagesInOfflineMode();
+            }
+            else create_new_request();
         }else{
             showImagesInOfflineMode();
         }
+        rotated = false;
+        Log.d("beshoy","onCreate");
     }
 
     private void showImagesInOfflineMode() {
-
-        Toast.makeText(context,getResources().getString(R.string.no_internet_error_message),Toast.LENGTH_LONG).show();
         //getting images from sugar database
         flickrImages = (ArrayList<Photo>) Photo.listAll(Photo.class);
 
         flickrAdapter.updateFlickrImages(flickrImages);
         flickrImages_recyclerView.setAdapter(flickrAdapter);
+        flickrImages_recyclerView.setLayoutManager(new LinearLayoutManager(context,LinearLayoutManager.VERTICAL,false));
+
+        if(!networkAvailable())
+            Toast.makeText(context,getResources().getString(R.string.no_internet_error_message),Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -102,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
     public void create_new_request(){
-
+        Log.d("beshoy","new request");
         final String flickr_URL = "https://api.flickr.com/" +
                 "services/rest/?method=flickr.photos.search" +
                 "&api_key=cca5c934cb35f3b62ad20ff75b5c3af0" +
@@ -119,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
                     @Override
                     public void onResponse(JSONObject response) {
+                        Log.d("beshoy","on response");
                         parseJsonObject(response);
                     }
                 }, new Response.ErrorListener() {
@@ -137,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
     private void parseJsonObject(JSONObject flickJsonObject) {
-
+        Log.d("beshoy","parsing");
         final String photos_JsonObject = "photos";
         final String photos_JsonArray  = "photo";
         final String image_title       = "title";
@@ -165,12 +175,15 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         if (!flickrImages.isEmpty()){
             flickrAdapter.updateFlickrImages(flickrImages);
             flickrImages_recyclerView.setAdapter(flickrAdapter);
+            flickrImages_recyclerView.setLayoutManager(new LinearLayoutManager(context,LinearLayoutManager.VERTICAL,false));
+            Log.d("beshoy","arrayList size: "+flickrImages.size());
         }
 
     }
 
     @Override
     public void onRequestFinished(Request<Object> request) {
+        Log.d("beshoy","request finished");
         images_swipe_refresh.setRefreshing(false);
         requestInProgress = false;
     }
@@ -178,6 +191,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        rotated = true;
         outState.putBoolean("requestInProgress",requestInProgress);
+        outState.putBoolean("rotated",rotated);
+        Log.d("beshoy","onSave");
     }
 }
