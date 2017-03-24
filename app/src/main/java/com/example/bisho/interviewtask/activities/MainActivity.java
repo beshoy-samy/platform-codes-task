@@ -58,19 +58,25 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         flickrImages = new ArrayList<>();
         flickrAdapter = new FlickrImagesRecyclerAdapter(context,flickrImages);
 
-        requestQueue = Volley.newRequestQueue(context);
+        requestQueue = Volley.newRequestQueue(context); // creating a request queue
+
         if(savedInstanceState != null) {
+            // getting the saved booleans to maintain the app state
             requestInProgress = savedInstanceState.getBoolean("requestInProgress");
             rotated           = savedInstanceState.getBoolean("rotated");
         }
         
         if(networkAvailable()) {
-            if(rotated) {
-                if (!requestInProgress)
-                    showImagesInOfflineMode();
+            if(rotated) { //if the device has been rotated
+                if (!requestInProgress) // check if there is a request in progress
+                    showImagesInOfflineMode();// if not will show the cached images
+                //if yes and there is a request in progress will not create a new one
+                //and the flow of the app should be normal but it is not working don't know why
+                //although after debugging the data is downloaded and parsed but recycler view is not
+                //showing them
             }
             else create_new_request();
-        }else{
+        }else{ // if network is not available will display the cached images
             showImagesInOfflineMode();
         }
         rotated = false;
@@ -94,8 +100,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         if(networkAvailable())
             create_new_request();
         else {
+            // no internet available display error message
             Toast.makeText(context, getResources().getString(R.string.no_internet_error_message), Toast.LENGTH_LONG).show();
-            images_swipe_refresh.setRefreshing(false);
+            images_swipe_refresh.setRefreshing(false); // ending the refresh progress circle
         }
     }
 
@@ -129,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     @Override
                     public void onResponse(JSONObject response) {
                         Log.d("beshoy","on response");
-                        parseJsonObject(response);
+                        parseJsonObject(response);//passing the Json object to be parsed
                     }
                 }, new Response.ErrorListener() {
 
@@ -157,14 +164,17 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             flickrImages.clear();   // clearing the images before getting the new images
             Photo.deleteAll(Photo.class);// clearing the images before saving the new images
 
+            //the main flickr Photos Json object
             JSONObject photos = flickJsonObject.getJSONObject(photos_JsonObject);
+            //getting flickr Images array
             JSONArray images = photos.getJSONArray(photos_JsonArray);
+            //looping on the array to fetch every image
             for (int i=0;i<images.length();i++){
                 JSONObject photo = images.getJSONObject(i);
                 String photoURL = photo.getString(image_URL);
                 String photoTitle = photo.getString(image_title);
                 Photo flickrPhoto = new Photo(photoURL,photoTitle);
-                flickrPhoto.save();
+                flickrPhoto.save(); //caching the downloaded image data
                 flickrImages.add(flickrPhoto);
             }
 
@@ -173,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
 
         if (!flickrImages.isEmpty()){
-            flickrAdapter.updateFlickrImages(flickrImages);
+            flickrAdapter.updateFlickrImages(flickrImages); // updating adapter's data
             flickrImages_recyclerView.setAdapter(flickrAdapter);
             flickrImages_recyclerView.setLayoutManager(new LinearLayoutManager(context,LinearLayoutManager.VERTICAL,false));
             Log.d("beshoy","arrayList size: "+flickrImages.size());
@@ -184,14 +194,15 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     public void onRequestFinished(Request<Object> request) {
         Log.d("beshoy","request finished");
-        images_swipe_refresh.setRefreshing(false);
-        requestInProgress = false;
+        images_swipe_refresh.setRefreshing(false); // ending the refresh progress circle
+        requestInProgress = false; // request has finished
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        rotated = true;
+        rotated = true; // the app is rotated
+        // putting booleans
         outState.putBoolean("requestInProgress",requestInProgress);
         outState.putBoolean("rotated",rotated);
         Log.d("beshoy","onSave");
